@@ -17,7 +17,7 @@ async def startup():
         async with database.engine.begin() as conn:
                 await conn.run_sync(models.Base.metadata.create_all)
 
-@app.post("/register", response_model=schemas.UserOut)
+@app.post("/register", response_model=schemas.UserPublic)
 async def register(user: schemas.UserCreate, db:AsyncSession = Depends(database.get_db)):
         existing = await crud.get_user_by_username(db,user.username)
         if existing:
@@ -32,4 +32,4 @@ async def login(form_data : schemas.UserLogin, db:AsyncSession = Depends(databas
                 raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, detail= "Invalid credentials")
         
         token = auth.create_access_token({"sub": user.username})
-        return {"access_token": token, "token_type" : "bearer" }
+        return {"access_token": token,"token_type" : "bearer", "user":user }
