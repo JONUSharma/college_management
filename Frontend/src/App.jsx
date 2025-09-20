@@ -7,6 +7,7 @@ import Courses from './Pages/Courses'
 import Dashboard from './Pages/Dashboard'
 import Notices from './Pages/notices'
 import AdminDashboard from './Pages/Admin'
+import ForgetPassword from './Pages/ForgetPassword'
 function App() {
 
 
@@ -23,6 +24,8 @@ function App() {
             <Route path="/assignments" element={<Assignment />} />
             <Route path="/notices" element={<Notices />} /> 
             <Route path="/admin" element={<AdminDashboard />} /> 
+            <Route path="/forget-password" element={<ForgetPassword />} /> 
+
           </Routes>
         </BrowserRouter>
       </div>

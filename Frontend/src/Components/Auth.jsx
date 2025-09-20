@@ -1,6 +1,6 @@
 import { useState } from "react";
 import instance from "./Axios/instance";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -203,6 +203,13 @@ export default function AuthPage() {
               {isLogin ? "Sign Up" : "Login"}
             </button>
           </p>
+          <div className = "flex justify-center">
+            {
+              isLogin && (
+                <Link to="/forget-password" className="text-blue-600 font-semibold hover:underline">Forget Password</Link>
+              )
+            }
+          </div>
         </div>
       </div>
     </div>

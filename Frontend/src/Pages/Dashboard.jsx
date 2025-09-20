@@ -13,12 +13,12 @@ import {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [username, setUserName] = useState("");
-  const [userAuth, setUserAuth] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userAuth, setUserAuth] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const Username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
 
     if (token) {
       setUserAuth(true);
@@ -144,6 +144,7 @@ export default function Dashboard() {
         </header>
 
         {/* Dashboard cards */}
+        
         <main className="flex-1 p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <div
             onClick={() => navigate("/courses")}
@@ -186,6 +187,8 @@ export default function Dashboard() {
             </p>
           </div>
         </main>
+          
+
       </div>
     </div>
   );
