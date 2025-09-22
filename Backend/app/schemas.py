@@ -11,7 +11,12 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
-
+# Safe user schema (response only, no password)
+class UserPublic(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
 
 # Token response
 class Token(BaseModel):
@@ -23,17 +28,18 @@ class Token(BaseModel):
 class ForgetPasswordRequest(BaseModel):
     email : EmailStr
 
+#Resert password request
 class ResetPasswordRequest(BaseModel):
     email:EmailStr
     otp:str
     new_password : str
 
-# Safe user schema (response only, no password)
-class UserPublic(BaseModel):
-    id: int
-    username: str
-    email: str
-    role: str
+
+#Read user (Response model)
+class UserRead(BaseModel):
+    id :int
+    username:str
+    role : str
 
     class Config:
         from_attributes = True

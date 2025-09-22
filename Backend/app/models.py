@@ -11,4 +11,4 @@ class User(Base):
     hashed_password = Column(String(60),nullable=False)
     role = Column(String(30),default= "student")
     otp = Column(String, nullable=True)
-    otp_expiry = Column(DateTime, nullable=True)
+    otp_expiry = Column(DateTime, nullable=True) 

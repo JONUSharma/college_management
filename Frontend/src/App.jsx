@@ -8,9 +8,8 @@ import Dashboard from './Pages/Dashboard'
 import Notices from './Pages/notices'
 import AdminDashboard from './Pages/Admin'
 import ForgetPassword from './Pages/ForgetPassword'
+import AllUsers from './Components/AllUsers'
 function App() {
-
-
   return (
     <>
       <div >

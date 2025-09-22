@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Calendar,
@@ -38,13 +38,13 @@ export default function Dashboard() {
   const SidebarContent = () => (
     <div className="flex flex-col p-6 space-y-4">
       <h2 className="text-2xl font-bold mb-4">🎓 College Portal</h2>
-      <button
-        onClick={() => navigate("/courses")}
+      <Link
+      to = "/notices"
         className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 transition"
       >
         <BookOpen className="w-5 h-5" />
         <span>My Courses</span>
-      </button>
+      </Link>
       <button
         onClick={() => navigate("/attendance")}
         className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 transition"

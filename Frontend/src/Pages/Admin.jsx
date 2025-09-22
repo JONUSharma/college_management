@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, Shield, BookOpen, Bell, BarChart,LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AllUsers from "../Components/AllUsers";
 
 export default function AdminDashboard() {
   const [username, setUserName] = useState("");
@@ -33,7 +34,7 @@ export default function AdminDashboard() {
           <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 w-full text-left">
             <Shield className="w-5 h-5" /> <span>Roles</span>
           </button>
-          <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 w-full text-left">
+          <button onClick={()=> navigate("/courses")} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 w-full text-left">
             <BookOpen className="w-5 h-5" /> <span>Courses</span>
           </button>
           <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 w-full text-left">
@@ -77,36 +78,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* User Management Table (skeleton example) */}
-        <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-lg font-bold mb-4">User Management</h2>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-200 text-left">
-                <th className="p-2">Name</th>
-                <th className="p-2">Role</th>
-                <th className="p-2">Email</th>
-                <th className="p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b">
-                <td className="p-2">John Doe</td>
-                <td className="p-2">Student</td>
-                <td className="p-2">john@example.com</td>
-                <td className="p-2">
-                  <button className="px-2 py-1 bg-green-500 text-white rounded text-sm">
-                    Edit
-                  </button>
-                  <button className="ml-2 px-2 py-1 bg-red-500 text-white rounded text-sm">
-                    Delete
-                  </button>
-                </td>
-              </tr>
-              {/* Map more users here */}
-            </tbody>
-          </table>
-        </div>
+        <AllUsers/>
+       
       </main>
     </div>
   );
