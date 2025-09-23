@@ -1566,3 +1566,56 @@ WHERE courses.id = %s
 2025-09-22 23:42:07,478 - sqlalchemy.engine.Engine - INFO - [generated in 0.00089s] (1,)
 2025-09-22 23:42:07,481 - main - INFO - Course created successfully with course name : DBMS
 2025-09-22 23:42:07,482 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-23 20:59:14,206 - sqlalchemy.engine.Engine - INFO - SELECT DATABASE()
+2025-09-23 20:59:14,207 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-23 20:59:14,214 - sqlalchemy.engine.Engine - INFO - SELECT @@sql_mode
+2025-09-23 20:59:14,214 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-23 20:59:14,216 - sqlalchemy.engine.Engine - INFO - SELECT @@lower_case_table_names
+2025-09-23 20:59:14,216 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-23 20:59:14,220 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-23 20:59:14,220 - sqlalchemy.engine.Engine - INFO - DESCRIBE `college_management`.`users`
+2025-09-23 20:59:14,221 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-23 20:59:14,281 - sqlalchemy.engine.Engine - INFO - DESCRIBE `college_management`.`users_archive`
+2025-09-23 20:59:14,282 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-23 20:59:14,286 - sqlalchemy.engine.Engine - INFO - DESCRIBE `college_management`.`courses`
+2025-09-23 20:59:14,286 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-23 20:59:14,292 - sqlalchemy.engine.Engine - INFO - 
+CREATE TABLE users_archive (
+	id INTEGER NOT NULL AUTO_INCREMENT, 
+	username VARCHAR(100), 
+	email VARCHAR(100), 
+	`role` VARCHAR(50), 
+	created_at DATETIME, 
+	deleted_at DATETIME, 
+	PRIMARY KEY (id)
+)
+
+
+2025-09-23 20:59:14,293 - sqlalchemy.engine.Engine - INFO - [no key 0.00075s] ()
+2025-09-23 20:59:14,376 - sqlalchemy.engine.Engine - INFO - CREATE INDEX ix_users_archive_id ON users_archive (id)
+2025-09-23 20:59:14,377 - sqlalchemy.engine.Engine - INFO - [no key 0.00058s] ()
+2025-09-23 20:59:14,413 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-09-23 21:02:25,394 - main - INFO - Login attempt for username = Jonu Sharma
+2025-09-23 21:02:25,398 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-23 21:02:25,411 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.username, users.email, users.hashed_password, users.`role`, users.otp, users.otp_expiry, users.created_at, users.updated_at 
+FROM users 
+WHERE users.username = %s
+2025-09-23 21:02:25,412 - sqlalchemy.engine.Engine - INFO - [generated in 0.00122s] ('Jonu Sharma',)
+2025-09-23 21:02:25,986 - main - INFO - User login successful: Jonu Sharma
+2025-09-23 21:02:25,999 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-23 21:03:03,897 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-23 21:03:03,898 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.username, users.email, users.hashed_password, users.`role`, users.otp, users.otp_expiry, users.created_at, users.updated_at 
+FROM users 
+WHERE users.username = %s
+2025-09-23 21:03:03,898 - sqlalchemy.engine.Engine - INFO - [cached since 38.49s ago] ('Jonu sharma',)
+2025-09-23 21:03:03,902 - main - INFO - Delete user with id=19 by Jonu sharma
+2025-09-23 21:03:03,904 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.username, users.email, users.hashed_password, users.`role`, users.otp, users.otp_expiry, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = %s
+2025-09-23 21:03:03,904 - sqlalchemy.engine.Engine - INFO - [generated in 0.00076s] (19,)
+2025-09-23 21:03:03,910 - sqlalchemy.engine.Engine - INFO - INSERT INTO users_archive (id, username, email, `role`, created_at, deleted_at) VALUES (%s, %s, %s, %s, %s, %s)
+2025-09-23 21:03:03,910 - sqlalchemy.engine.Engine - INFO - [generated in 0.00064s] (19, ' Sharma', 'Ra@gmail.com', 'student', datetime.datetime(2025, 9, 22, 22, 40, 40), datetime.datetime(2025, 9, 23, 15, 33, 3, 907048))
+2025-09-23 21:03:03,923 - sqlalchemy.engine.Engine - INFO - DELETE FROM users WHERE users.id = %s
+2025-09-23 21:03:03,923 - sqlalchemy.engine.Engine - INFO - [generated in 0.00066s] (19,)
+2025-09-23 21:03:03,929 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-09-23 21:03:03,935 - main - INFO - User 19 deleted and archived by Jonu sharma
