@@ -11,7 +11,6 @@ app = APIRouter()
 logger = get_logger("main")
 
 # By /register user can signup/register
-
 @app.post("/register", response_model=schemas.UserPublic)
 async def register(user: schemas.UserCreate, db: AsyncSession = Depends(database.get_db)):
     try:
@@ -46,7 +45,6 @@ async def login(
 ):
     try:
         logger.info(f"Login attempt for username = {form_data.username}")
-
         user = await crud.get_user_by_username(db, form_data.username)
         if not user or not auth.verify_password(form_data.password, user.hashed_password):
             logger.warning(f"Login failed for username = {form_data.username}")
@@ -55,14 +53,17 @@ async def login(
                 detail="Invalid credentials"
             )
 
-        logger.info(f"User login successful: {form_data.username}")
         token = auth.create_access_token({"sub": user.username})
+        logger.info(f"User login successful: {form_data.username}")
 
         return {
             "access_token": token,
             "token_type": "bearer",
             "user": user
         }
+    except HTTPException:
+        # ✅ don’t catch your own intentional HTTP errors
+        raise
     except Exception as e:
         logger.error(f"Unexpected error during login for username={form_data.username}: {str(e)}")
         raise HTTPException(
@@ -180,6 +181,41 @@ async def delete_user(
     return {"message": "User deleted successfully"}
 
 
+#update user role by admin
+@app.put("/users/{user_id}", response_model=schemas.UserRead)
+async def update_user(
+    user_id: int,
+    user_data: schemas.UserUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: AsyncSession = Depends(database.get_db)
+):
+    try:
+         # ✅ Only admin can update
+        if current_user.role != "admin" and current_user.id == user_id:
+         logger.info(f"{current_user.username} is not authorized to update users")
+         raise HTTPException(status_code=403, detail="Not authorized to update users")
+         # ✅ Fetch user
+        result = await db.execute(select(models.User).where(models.User.id == user_id))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            logger.warning("User not found")
+            raise HTTPException(status_code=404, detail="User not found")
+        # ✅ Update fields if provided
+        if user_data.username:
+             user.username = user_data.username
+        if user_data.role:
+            user.role = user_data.role
+
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        logger.info(f"user detail update successfully {user}")
+        return user
+    except Exception as e :
+        logger.exception("Error in updating user detail")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # create new Course
 @app.post("/create-course", response_model=schemas.COursePublic)
 async def create_course(course : schemas.CourseCreate, db :AsyncSession = Depends(database.get_db)):
@@ -192,3 +228,77 @@ async def create_course(course : schemas.CourseCreate, db :AsyncSession = Depend
           logger.exception(f"Error creating course : {str(e)}")
           raise HTTPException(status_code=500, detail="Internal server error")     
 
+# USer try to fetch all courses
+@app.get("/fetch-courses")
+async def fetch_courses(db : AsyncSession = Depends(database.get_db)):
+     try:
+          logger.info("User try to fetch all courses")
+          result = await db.execute(select(models.Courses))
+          course = result.scalars().all()
+          if not course:
+               logger.warning("No course is availabe")
+               raise HTTPException(status_code=403, detail="No course found")
+          logger.info(f"ALl courses found successfully: {course}")
+          return course
+     except Exception as e:
+          logger.exception("Error in fetching courses")
+          raise HTTPException(status_code=500, detail="Error in finding courses")
+          
+# delete courses by admin
+@app.delete("/delete-course/{course_id}")
+async def delete_course(course_id : int, db : AsyncSession = Depends(database.get_db), current_user: models.User = Depends(auth.get_current_user)):
+     try :
+          logger.info(f"User {current_user.username} try to delete course by id : {course_id}")
+          # check user role
+          if current_user.role != "admin":
+               logger.warning(f"{current_user.username} are not authorized to delete the course with id: {course_id}")
+               raise HTTPException(status_code=403, detail=f"{current_user.username} are not authorized to delete the course")
+
+          course = await db.execute(select(models.Courses).filter(models.Courses.id == course_id))
+          course = course.scalar_one_or_none()
+          if not course:
+               logger.exception(f"NO course found with id : {course_id}")
+               raise HTTPException(status_code=404, detail=f"No course found with id :{course_id}" )
+          await db.delete(course)
+          await db.commit()
+          logger.info(f"course deleted by {current_user.username} with course id : {course_id}")
+          return {"message" : f"Course deleted by {current_user.username} with course id :{course_id}"}
+     except Exception as e:
+          logger.exception("Error in deleting course")
+          raise HTTPException(status_code=500, detail="Error in deleting course")
+
+# admin can update the course detail
+@app.put("/update-course/{course_id}")
+async def update_course(
+    course_id: int,
+    course_update: schemas.UpdateCourse,
+    db: AsyncSession = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    try:
+        # Check user role
+        if current_user.role != "admin":
+            logger.info(f"{current_user.username} are not authorized to update courses")
+            raise HTTPException(status_code=403, detail="You are not authorized to update courses")
+
+        # Fetch existing course
+        result = await db.execute(select(models.Courses).filter(models.Courses.id == course_id))
+        course = result.scalar_one_or_none()
+
+        if not course:
+            logger.warning(f"No course found with id :{course_id}")
+            raise HTTPException(status_code=404, detail=f"No course found with id: {course_id}")
+
+        # Update only provided fields
+        update_data = course_update.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(course, key, value)
+
+        # Commit changes
+        await db.commit()
+        await db.refresh(course)
+        logger.info(f"Admin {current_user.username} update the course with id : {course_id}")
+        return {"message": f"Course {course_id} updated successfully", "course": course}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating course: {str(e)}")

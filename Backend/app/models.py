@@ -34,5 +34,6 @@ class Courses(Base):
     Course_desc = Column(String(300))
     Course_credit = Column(String(40))
     Course_duration = Column(String(40))
+    Course_department = Column(String(40))
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())

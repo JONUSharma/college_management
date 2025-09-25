@@ -1,6 +1,7 @@
 import { useState } from "react";
 import instance from "./Axios/instance";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -54,6 +55,7 @@ export default function AuthPage() {
         });
 
         saveUserAndRedirect(loginRes.data);
+        toast.success("✅ User signup successfully")
       } else {
         // LOGIN
         const loginPayload = {
@@ -65,6 +67,7 @@ export default function AuthPage() {
         });
 
         saveUserAndRedirect(loginRes.data);
+        toast.success("✅ Login successfully")
       }
     } catch (err) {
       console.error("Auth error:", err);
@@ -73,6 +76,7 @@ export default function AuthPage() {
         err.response?.data?.message ||
         "Something went wrong. Please try again.";
       setError(message);
+      toast.error(message)
     } finally {
       setLoading(false);
     }

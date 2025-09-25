@@ -17,7 +17,7 @@ const Assignment = () => {
   return (
     <div>
       {
-        userAuth ? <div>Coursers </div> :
+        userAuth ? <div>Assignment </div> :
         <div>
           <h1>TO access courses you should login first</h1>
           {/* <button onClick={navigate("/auth")}> click here to login </button> */}

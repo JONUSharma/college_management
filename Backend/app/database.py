@@ -14,11 +14,20 @@ DB_PORT = os.getenv("DB_PORT")
 DATABASE_URL=f"mysql+aiomysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_async_engine(DATABASE_URL, echo = True)
-sessionLocal = sessionmaker(bind = engine, class_= AsyncSession, expire_on_commit= False )
+async_session_maker = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+    autocommit=False,
+)
 
 Base = declarative_base()
 
 # Dependency for db sesion
 async def get_db():
-    async with sessionLocal() as session:
-        yield session
+    async with async_session_maker() as session:
+        try:
+            yield session
+        finally:
+            await session.close()

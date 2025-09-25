@@ -7,8 +7,10 @@ import {
   Bell,
   LogOut,
   Menu,
-  X,
+  School
 } from "lucide-react";
+import Sidebar from "../Components/Sidebar";
+import { toast } from "react-toastify";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -18,9 +20,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     const Username = localStorage.getItem("username");
+    const role = localStorage.getItem("role");
     const token = localStorage.getItem("token");
 
     if (token) {
+      if(role === "admin")
+      {
+        navigate('/admin')
+      }
       setUserAuth(true);
       setUserName(Username || "Student");
     } else {
@@ -32,56 +39,25 @@ export default function Dashboard() {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     setUserAuth(false);
+    toast.success("Logout successgully.")
     navigate("/");
   };
+  const menuItems = [
+    { label: " My Courses", icon: BookOpen, onClick: () => setActiveState("courses") },
+    { label: "Attendance", icon: Calendar, onClick: () => setActiveState("attendance") },
+    { label: "Assignment", icon: School, onClick: () => setActiveState("assignment") },
+    { label: "Notices", icon: Bell, onClick: () => setActiveState("notices") },
+  ];
 
-  const SidebarContent = () => (
-    <div className="flex flex-col p-6 space-y-4">
-      <h2 className="text-2xl font-bold mb-4">🎓 College Portal</h2>
-      <Link
-      to = "/notices"
-        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 transition"
-      >
-        <BookOpen className="w-5 h-5" />
-        <span>My Courses</span>
-      </Link>
-      <button
-        onClick={() => navigate("/attendance")}
-        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 transition"
-      >
-        <Calendar className="w-5 h-5" />
-        <span>Attendance</span>
-      </button>
-      <button
-        onClick={() => navigate("/assignments")}
-        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 transition"
-      >
-        <ClipboardList className="w-5 h-5" />
-        <span>Assignments</span>
-      </button>
-      <button
-        onClick={() => navigate("/notices")}
-        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-600 transition"
-      >
-        <Bell className="w-5 h-5" />
-        <span>Notices</span>
-      </button>
-      <button
-        onClick={handleLogout}
-        className="flex absolute bottom-3 w-36 items-center space-x-3 p-3 rounded-lg bg-red-600 hover:bg-red-700 transition mt-4"
-      >
-        <LogOut className="w-5 h-5" />
-        <span>Logout</span>
-      </button>
-    </div>
-  );
+  
 
   return (
     <div className="min-h-screen flex bg-gray-100">
       {/* Desktop Sidebar */}
       {userAuth && (
         <aside className="hidden md:flex w-64 bg-indigo-700 text-white shadow-lg">
-          <SidebarContent />
+          {/* <SidebarContent /> */}
+          <Sidebar menuItems={menuItems} handleLogout={handleLogout} heading = {"🎓 College Portal"} />
         </aside>
       )}
 
@@ -89,7 +65,7 @@ export default function Dashboard() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="w-64 bg-indigo-700 text-white">
-            <SidebarContent />
+            <Sidebar menuItems={menuItems} handleLogout={handleLogout} heading = {"🎓 College Portal"} />
           </div>
           <div
             className="flex-1 bg-black/50"

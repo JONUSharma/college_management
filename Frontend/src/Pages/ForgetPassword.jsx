@@ -1,6 +1,7 @@
 import { useState } from "react";
 import instance from "../Components/Axios/instance"; // axios instance
 import {Link} from "react-router-dom"
+import {toast} from 'react-toastify'
 export default function ForgetPassword() {
   const [step, setStep] = useState(1); // step 1 = request OTP, step 2 = reset password
   const [form, setForm] = useState({
@@ -21,9 +22,11 @@ export default function ForgetPassword() {
     try {
       const res = await instance.post("/forget-password", { email: form.email });
       setMessage(res.data.message || "OTP sent to your email");
+      toast.success("OTP send successfully.")
       setStep(2); // move to reset step
     } catch (err) {
       setMessage(err.response?.data?.detail || "Error sending OTP");
+      toast.error("Error in sending OTP")
     } finally {
       setLoading(false);
     }
@@ -39,10 +42,12 @@ export default function ForgetPassword() {
         new_password: form.new_password,
       });
       setMessage(res.data.message || "Password reset successful");
+      toast.success("Password reset successfully")
       setStep(1) // get back to step 1
       setForm({ email: "", otp: "", new_password: "" });
     } catch (err) {
       setMessage(err.response?.data?.detail || "Error resetting password");
+      toast.error("Failed to reset password")
     } finally {
       setLoading(false);
     }

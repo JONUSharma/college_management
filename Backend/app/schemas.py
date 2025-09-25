@@ -44,11 +44,16 @@ class UserRead(BaseModel):
     username:str
     role : str
 
+class UserUpdate(BaseModel):
+    username: str
+    role: str
+
 # Request model for creating courses
 class CourseCreate(BaseModel):
     Course_name: str
     Course_desc: str
     Course_duration : str
+    Course_department : str
     Course_credit : str
 
 # class model for sending response of course info
@@ -57,9 +62,16 @@ class COursePublic(BaseModel):
     Course_name: str
     Course_desc: str | None = None
     Course_duration : str
+    Course_department : str
     Course_credit : str
     created_at: datetime
     updated_at: datetime
+class UpdateCourse(BaseModel):
+    Course_name: str
+    Course_desc: str | None = None
+    Course_duration : str
+    Course_department : str
+    Course_credit : str
 
 
     class Config:
