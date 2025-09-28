@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from typing import List
 from ..logs.logger_config import get_logger
 from .. import database,auth,models,crud,schemas
 from ..sendOtp import send_mail
@@ -38,9 +40,7 @@ async def register(user: schemas.UserCreate, db: AsyncSession = Depends(database
 
 # By using /login user can login
 @app.post("/login", response_model=schemas.Token)
-async def login(
-
-    form_data: schemas.UserLogin,
+async def login( form_data: schemas.UserLogin,
     db: AsyncSession = Depends(database.get_db)
 ):
     try:
@@ -140,6 +140,13 @@ async def get_all_users(
     logger.info(f"Admin = {current_user.username        } get all user list")
     return users
 
+
+#Fetch current user
+@app.get("/users/me", response_model=schemas.UserPublic)
+async def read_current_user(
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    return current_user
 
 # Delete user by admin
 @app.delete("/user/{user_id}")
@@ -302,3 +309,120 @@ async def update_course(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating course: {str(e)}")
+
+
+# mark attendance
+@app.post("/attendance", response_model=schemas.AttendanceResponse)
+async def mark_attendance(
+    attendance_data: schemas.AttendanceCreate,
+    db: AsyncSession = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+    
+):
+    try:
+        if current_user["role"] not in ["teacher", "admin"]:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        attendance = models.Attendance(
+            student_id=attendance_data.student_id,
+            course_id=attendance_data.course_id,
+            status=attendance_data.status,
+            date=datetime.utcnow()
+        )
+        db.add(attendance)
+        await db.commit()
+        await db.refresh(attendance)
+        logger.info(f"Marked attendance for student_id={attendance_data.student_id}")
+        return attendance
+    except Exception as e:
+        logger.error(f"Error marking attendance: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.get("/attendance/{student_id}", response_model=list[schemas.AttendanceResponse])
+async def get_attendance(student_id: int, db: AsyncSession = Depends(database.get_db)):
+    try:
+        result = await db.execute(
+            select(models.Attendance).where(models.Attendance.student_id == student_id)
+        )
+        data = result.scalars().all()
+        return data
+    except Exception as e:
+        logger.error(f"Error fetching attendance for student_id={student_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.post("/attendance/bulk")
+async def mark_bulk_attendance(
+    data: schemas.BulkAttendanceCreate,
+    db: AsyncSession = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+
+):
+    try:
+        if current_user["role"] not in ["teacher", "admin"]:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        inserted_attendances = []
+
+        for item in data.attendances:
+            # Check student exists
+            student = await db.get(models.User, item.student_id)
+            if not student:
+                raise HTTPException(status_code=404, detail=f"Student {item.student_id} not found")
+            
+            # Check course exists
+            course = await db.get(models.Courses, item.course_id)
+            if not course:
+                raise HTTPException(status_code=404, detail=f"Course {item.course_id} not found")
+
+            attendance = models.Attendance(
+                student_id=item.student_id,
+                course_id=item.course_id,
+                status=item.status,
+                date=datetime.utcnow()
+            )
+            db.add(attendance)
+            inserted_attendances.append(attendance)
+
+        await db.commit()
+        for att in inserted_attendances:
+            await db.refresh(att)
+
+        logger.info(f"Marked bulk attendance for {len(inserted_attendances)} students")
+        return {"message": f"Attendance marked for {len(inserted_attendances)} students", "data": inserted_attendances}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error marking bulk attendance: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# Student enroll self
+@app.post("/enroll", response_model=schemas.EnrollmentResponse)
+async def enroll_course(enroll: schemas.EnrollmentCreate, db: AsyncSession = Depends(database.get_db), current_user:models.User = Depends(auth.get_current_user)):
+    if current_user.role not in ["student", "admin"]:
+        logger.warning("User not authorized to enroll for course")
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    enrollment = models.Enrollment(student_id=enroll.student_id, course_id=enroll.course_id)
+    db.add(enrollment)
+    await db.commit()
+    await db.refresh(enrollment)
+    return enrollment
+
+# Get students of a course (Teacher/Admin/HOD)
+@app.get("/course/{course_id}/students")
+async def get_course_students(course_id: int, db: AsyncSession = Depends(database.get_db), current_user:models.User = Depends(auth.get_current_user)):
+    if current_user.role not in ["teacher","admin","hod"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    result = await db.execute(
+        select(models.Enrollment)
+        .options(selectinload(models.Enrollment.student))  # ✅ eagerly load student
+        .where(models.Enrollment.course_id==course_id)
+    )
+    enrollments = result.scalars().all()
+    
+    students_list = [{"id": e.student.id, "name": e.student.username} for e in enrollments]
+    return students_list   

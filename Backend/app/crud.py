@@ -21,7 +21,9 @@ async def create_course(db: AsyncSession, course: schemas.CourseCreate):
         Course_desc=course.Course_desc,
         Course_duration=course.Course_duration,
         Course_department=course.Course_department,
-        Course_credit=course.Course_credit
+        Course_credit=course.Course_credit,
+        teacher_id = course.teacher_id
+
     )
     db.add(new_course)
     await db.commit()

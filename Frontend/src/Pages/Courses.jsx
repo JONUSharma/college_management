@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import instance from "../Components/Axios/instance";
+import Available_courses from "../Components/Available_courses";
 import { toast } from "react-toastify";
 const CourseManagement = () => {
   const [courses, setCourses] = useState([]);
@@ -94,6 +95,7 @@ const CourseManagement = () => {
           duration: "",
           description: "",
         });
+        console.log(result.data)
       } catch (error) {
         console.error("Error updating course", error.response?.data || error.message);
       }
@@ -112,8 +114,8 @@ const CourseManagement = () => {
         setCourses((prev) => prev.filter((course) => course.id !== id));
         toast.success("Course deleted successfully")
       } catch (error) {
-        console.log("Error in deleting course", error.response?.data || error.message);
         toast.error("Error in deleting course")
+        console.log("Error in deleting course", error.response?.data || error.message);
       }
     };
   
@@ -196,7 +198,7 @@ const CourseManagement = () => {
         </form>
   
         {/* Show Courses */}
-        <div className="mt-8">
+        {/* <div className="mt-8">
           <h3 className="text-lg font-semibold mb-4">Available Courses</h3>
           {courses.length > 0 ? (
             <table className="table-auto w-full border-collapse border border-gray-300 bg-white shadow-md rounded-lg">
@@ -250,7 +252,9 @@ const CourseManagement = () => {
           ) : (
             <p className="text-gray-500">No courses created yet.</p>
           )}
-        </div>
+        </div> */}
+
+        <Available_courses delete_course ={delete_course}/>
       </div>
     );
   };

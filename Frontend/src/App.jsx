@@ -19,16 +19,13 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            {/* <Route path="/attendance" element={<Attendance />} />
-            <Route path="/assignments" element={<Assignment />} />
-            <Route path="/notices" element={<Notices />} />  */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/forget-password" element={<ForgetPassword />} />
 
           </Routes>
         </BrowserRouter>
         <ToastContainer
-          position="top-right"
+          position="top-left"
           autoClose={3000}
           hideProgressBar={false}
           newestOnTop

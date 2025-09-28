@@ -9,6 +9,7 @@ import Card from "../Components/Cards";
 import Sidebar from "../Components/Sidebar";
 import UserUpdateForm from "../Components/UpdateUser";
 import { toast } from "react-toastify";
+import Attendance from "./Attendance";
 export default function AdminDashboard() {
   const [username, setUserName] = useState("");
   const [activeState, setActiveState] = useState("dashboard")
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
     localStorage.removeItem("role");
     setUserName(false);
     toast.success("Logout succcessfully")
-    navigate("/");
+    navigate("/auth");
   };
 
   // cards data
@@ -40,7 +41,6 @@ export default function AdminDashboard() {
   // Sidebar buttons data
   const menuItems = [
     { label: "Dashboard", icon: BarChart, onClick: () => setActiveState("dashboard") },
-    // { label: "Roles", icon: Shield, onClick: () => setActiveState("roles") },
     { label: "Courses", icon: BookOpen, onClick: () => setActiveState("courses") },
     { label: "Attendance", icon: Calendar, onClick: () => setActiveState("attendance") },
     { label: "Assignment", icon: School, onClick: () => setActiveState("assignment") },
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
         </div>
 
         {
-          activeState === "dashboard" ? <AllUsers  /> : activeState === "courses" ? <CourseManagement /> :
+          activeState === "dashboard" ? <AllUsers  /> : activeState === "courses" ? <CourseManagement /> : activeState === "attendance" ? <Attendance/>:
             activeState === "notice" ? <Notices /> : activeState === "assignment" ? <Assignment /> :activeState === "roles" ? <UserUpdateForm/>: <p>❌ Not Found</p>
         }
       </main>
