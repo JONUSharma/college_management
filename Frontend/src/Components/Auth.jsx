@@ -1,102 +1,139 @@
-import { useState } from "react";
-import instance from "./Axios/instance";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { LoginUserThunk, SignupUserThunk } from "../Store/Auth/AuthThunk";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [error, setError] = useState("");
   const [values, setValues] = useState({
     username: "",
     password: "",
     email: "",
     confirmPassword: ""
   });
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { loading, token, error } = useSelector((state) => state.auth)
 
   // Handle input change
   const handleChange = (e) => {
     setValues((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Handle form submit
-  const handleSubmit = async (e) => {
+// Handle Form submit with the help of redux
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError(""); // reset old error
-    setLoading(true);
 
-    try {
-      if (!isLogin) {
-        // validate confirm password
-        if (values.password !== values.confirmPassword) {
-          setError("Passwords do not match");
-          setLoading(false);
-          return; // stop execution
-        }
-
-        // SIGNUP
-        const signupPayload = {
+    if (!isLogin) {
+      if (values.password !== values.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+      dispatch(
+        SignupUserThunk({
           username: values.username,
           email: values.email,
-          password: values.password
-        };
-        await instance.post("/register", signupPayload, {
-          headers: { "Content-Type": "application/json" }
-        });
+          password: values.password,
+        })
+      ).unwrap()
+        .then((data) => {
+          if (data?.access_token) {
+            localStorage.setItem("token", data.access_token);
+            localStorage.setItem("role", data?.user?.role);
+            localStorage.setItem("username", data?.user?.username);
 
-        // After signup, auto-login
-        const loginPayload = {
+            const role = data?.user?.role;
+            if (role === "admin") navigate("/admin");
+            else navigate("/");
+          }
+        })
+        .catch((err) => toast.error(err));
+    } else {
+      dispatch(
+        LoginUserThunk({
           username: values.username,
-          password: values.password
-        };
-        const loginRes = await instance.post("/login", loginPayload, {
-          headers: { "Content-Type": "application/json" }
-        });
+          password: values.password,
+        })
+      ).unwrap()
+        .then((data) => {
+          if (data?.access_token) {
+            localStorage.setItem("token", data.access_token);
+            localStorage.setItem("role", data?.user?.role);
+            localStorage.setItem("username", data?.user?.username);
 
-        saveUserAndRedirect(loginRes.data);
-        toast.success("✅ User signup successfully")
-      } else {
-        // LOGIN
-        const loginPayload = {
-          username: values.username || values.email,
-          password: values.password
-        };
-        const loginRes = await instance.post("/login", loginPayload, {
-          headers: { "Content-Type": "application/json" }
-        });
-
-        saveUserAndRedirect(loginRes.data);
-        toast.success("✅ Login successfully")
-      }
-    } catch (err) {
-      console.error("Auth error:", err);
-      const message =
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        "Something went wrong. Please try again.";
-      setError(message);
-      toast.error(message)
-    } finally {
-      setLoading(false);
+            const role = data?.user?.role;
+            if (role === "admin") navigate("/admin");
+            else navigate("/");
+          }
+        })
+        .catch((err) => toast.error(err));
     }
   };
+  // Handle form submit
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   // setError(""); reset old error
+  //   // setLoading(true);
 
-  // Save token & redirect based on role
-  const saveUserAndRedirect = (data) => {
-    if (data?.access_token) {
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("role", data?.user?.role);
-      localStorage.setItem("username", data?.user?.username);
+  //   try {
+  //     if (!isLogin) {
+  //       // validate confirm password
+  //       if (values.password !== values.confirmPassword) {
+  //         setError("Passwords do not match");
+  //         setLoading(false);
+  //         return; // stop execution
+  //       }
 
-      const role = data?.user?.role;
-      if (role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
-      }
-    }
-  };
+  //       // SIGNUP
+  //       const signupPayload = {
+  //         username: values.username,
+  //         email: values.email,
+  //         password: values.password
+  //       };
+  //       await instance.post("/register", signupPayload, {
+  //         headers: { "Content-Type": "application/json" }
+  //       });
+
+  //       // After signup, auto-login
+  //       const loginPayload = {
+  //         username: values.username,
+  //         password: values.password
+  //       };
+  //       const loginRes = await instance.post("/login", loginPayload, {
+  //         headers: { "Content-Type": "application/json" }
+  //       });
+
+  //       saveUserAndRedirect(loginRes.data);
+  //       toast.success("✅ User signup successfully")
+  //     } else {
+  //       // LOGIN
+  //       const loginPayload = {
+  //         username: values.username || values.email,
+  //         password: values.password
+  //       };
+  //       const loginRes = await instance.post("/login", loginPayload, {
+  //         headers: { "Content-Type": "application/json" }
+  //       });
+
+  //       saveUserAndRedirect(loginRes.data);
+  //       toast.success("✅ Login successfully")
+  //     }
+  //   } catch (err) {
+  //     console.error("Auth error:", err);
+  //     const message =
+  //       err.response?.data?.detail ||
+  //       err.response?.data?.message ||
+  //       "Something went wrong. Please try again.";
+  //     setError(message);
+  //     toast.error(message)
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gray-900">
@@ -200,14 +237,13 @@ export default function AuthPage() {
                   password: "",
                   confirmPassword: ""
                 });
-                setError("");
               }}
               className="text-indigo-600 font-semibold hover:underline"
             >
               {isLogin ? "Sign Up" : "Login"}
             </button>
           </p>
-          <div className = "flex justify-center">
+          <div className="flex justify-center">
             {
               isLogin && (
                 <Link to="/forget-password" className="text-blue-600 font-semibold hover:underline">Forget Password</Link>

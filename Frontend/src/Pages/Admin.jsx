@@ -10,17 +10,30 @@ import Sidebar from "../Components/Sidebar";
 import UserUpdateForm from "../Components/UpdateUser";
 import { toast } from "react-toastify";
 import Attendance from "./Attendance";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUsers } from "../Store/Auth/AuthThunk";
+import { Fetch_course_Thunk } from "../Store/Courses/CourseThunk";
+
+
 export default function AdminDashboard() {
   const [username, setUserName] = useState("");
   const [activeState, setActiveState] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { token } = useSelector(state => state.auth)
 
+  const dispatch = useDispatch();
   useEffect(() => {
+    dispatch(fetchUsers(token));
+    dispatch(Fetch_course_Thunk());
     const Name = localStorage.getItem("username");
     if (Name) setUserName(Name);
-  }, []);
+  }, [dispatch]);
 
+  const { users } = useSelector(state => state.auth)
+  const {courses} = useSelector(state => state.CourseSlice)
+
+  if (!token) navigate("/auth")
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
@@ -32,9 +45,9 @@ export default function AdminDashboard() {
 
   // cards data
   const cardsData = [
-    { title: "Total Users", value: 1200, icon: Users, color: "text-indigo-600" },
-    { title: "Courses", value: 5, icon: BookOpen, color: "text-green-600" },
-    { title: "Notices", value: 15, icon: Bell, color: "text-orange-600" },
+    { title: "Total Users", value: users.length, icon: Users, color: "text-indigo-600" },
+    { title: "Courses", value: courses.length, icon: BookOpen, color: "text-green-600" },
+    { title: "Notices", value: "Null", icon: Bell, color: "text-orange-600" },
     { title: "Admins", value: 1, icon: Shield, color: "text-red-600" },
   ];
 
@@ -49,7 +62,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen flex bg-gray-100">
       {/* Sidebar */}
-      <Sidebar menuItems={menuItems} handleLogout={handleLogout} heading = {"🖥️ Admin Panel"} />
+      <Sidebar menuItems={menuItems} handleLogout={handleLogout} heading={"🖥️ Admin Panel"} />
 
       {/* Mobile Sidebar */}
       {sidebarOpen && (
@@ -81,8 +94,8 @@ export default function AdminDashboard() {
         </div>
 
         {
-          activeState === "dashboard" ? <AllUsers  /> : activeState === "courses" ? <CourseManagement /> : activeState === "attendance" ? <Attendance/>:
-            activeState === "notice" ? <Notices /> : activeState === "assignment" ? <Assignment /> :activeState === "roles" ? <UserUpdateForm/>: <p>❌ Not Found</p>
+          activeState === "dashboard" ? <AllUsers /> : activeState === "courses" ? <CourseManagement /> : activeState === "attendance" ? <Attendance /> :
+            activeState === "notice" ? <Notices /> : activeState === "assignment" ? <Assignment /> : activeState === "roles" ? <UserUpdateForm /> : <p>❌ Not Found</p>
         }
       </main>
     </div>

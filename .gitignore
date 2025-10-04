@@ -1,3 +1,5 @@
 Backend/logs/app.log
 log/*.log
 Backend/log
+.qodo
+

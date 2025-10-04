@@ -40,7 +40,7 @@ class Courses(Base):
     Course_department = Column(String(40))
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
-    teacher_id = Column(Integer, ForeignKey("users.id"))
+    teacher_Name = Column(String(40), ForeignKey("users.username"))
 
     teacher = relationship("User", back_populates="courses")
     enrollments = relationship("Enrollment", back_populates="course")

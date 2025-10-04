@@ -16,8 +16,8 @@ function App() {
       <div >
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/forget-password" element={<ForgetPassword />} />

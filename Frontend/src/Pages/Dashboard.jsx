@@ -16,13 +16,14 @@ import Assignment from "./Assignment";
 import Notices from "./notices";
 import Available_courses from "../Components/Available_courses";
 import instance from "../Components/Axios/instance";
+import Student_Enroll_course from "../Components/Student/StudentEnrollCourse";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [username, setUserName] = useState("");
   const [Student_id, setStudent_id] = useState("")
   const [Course_id, setCourse_id] = useState("")
-  const [activeState, setActiveState] = useState("courses")
+  const [activeState, setActiveState] = useState("viewEnrollCourses")
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userAuth, setUserAuth] = useState(false);
 
@@ -101,7 +102,8 @@ export default function Dashboard() {
 
 
   const menuItems = [
-    { label: " My Courses", icon: BookOpen, onClick: () => setActiveState("courses") },
+    { label: " My Courses", icon: BookOpen, onClick: () => setActiveState("viewEnrollCourses") },
+    { label: " Available Courses", icon: BookOpen, onClick: () => setActiveState("courses") },
     { label: "Attendance", icon: Calendar, onClick: () => setActiveState("attendance") },
     { label: "Assignment", icon: School, onClick: () => setActiveState("assignment") },
     { label: "Notices", icon: Bell, onClick: () => setActiveState("notices") },
@@ -161,8 +163,8 @@ export default function Dashboard() {
           </header>
 
           {
-            activeState === "attendance" ? <Attendance /> : activeState === "courses" ? <Available_courses Enroll_course={Enroll_course} /> :
-              activeState === "assignment" ? <Assignment /> : activeState === "notices" ? <Notices /> : "NOT FOUND"
+            activeState === "attendance" ? <Attendance  /> : activeState === "courses" ? <Available_courses Enroll_course={Enroll_course} /> :
+              activeState === "assignment" ? <Assignment /> : activeState === "notices" ? <Notices /> : activeState === "viewEnrollCourses" ? <Student_Enroll_course /> : null
           }
         </div>
       )}

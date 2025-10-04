@@ -1,37 +1,43 @@
-import React from 'react'
-import instance from "../Components/Axios/instance";
-import { useEffect, useState } from "react";
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { Fetch_course_Thunk } from '../Store/Courses/CourseThunk';
 
-const Available_courses = ({ delete_course, Enroll_course }) => {
-    const [courses, setCourses] = useState([]);
-    const role = localStorage.getItem("role")
-    const Fetch_courses = async () => {
-        try {
-            const courses = await instance.get("/fetch-courses");
-            setCourses(courses.data);
-        } catch (error) {
-            console.log("Error in fetching courses :", error);
-        }
-    };
+const Available_courses = ({ delete_course, Enroll_course, startEditing }) => {
+    const role = localStorage.getItem("role");
+    const dispatch = useDispatch();
 
+    // Get courses, loading, and error from Redux
+    const { loading, error, courses } = useSelector((state) => state.CourseSlice);
+
+    // Fetch courses on component mount
     useEffect(() => {
-        Fetch_courses();
-    }, []);
+        dispatch(Fetch_course_Thunk());
+    }, [dispatch]);
+
+
+
     return (
-        <div>
-            <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">Available Courses</h3>
-                {courses.length > 0 ? (
-                    <table className="table-auto w-full border-collapse border border-gray-300 bg-white shadow-md rounded-lg">
-                        <thead className="bg-gray-200">
+        <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">Available Courses</h3>
+
+            {/* Loading and Error */}
+            {loading && <p>Loading courses...</p>}
+            {error && <p className="text-red-500">{error}</p>}
+
+            {/* Courses Table */}
+            {courses && courses.length > 0 ? (
+                <div className="overflow-x-auto rounded-2xl shadow-lg bg-white">
+                    <table className="table-auto w-full border border-gray-300 bg-white shadow-md">
+                        <thead className="bg-gradient-to-r from-indigo-500 to to-purple-600">
                             <tr>
-                                <th className="border p-2">ID</th>
-                                <th className="border p-2">Course Name</th>
-                                <th className="border p-2">Credits</th>
-                                <th className="border p-2">Department</th>
-                                <th className="border p-2">Duration</th>
-                                <th className="border p-2">Description</th>
-                                <th className="border p-2">Action</th>
+                                <th className=" p-2">ID</th>
+                                <th className=" p-2">Course Name</th>
+                                <th className=" p-2">Credits</th>
+                                <th className=" p-2">Teacher Name</th>
+                                <th className=" p-2">Department</th>
+                                <th className=" p-2">Duration</th>
+                                <th className=" p-2">Description</th>
+                                <th className=" p-2">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -40,21 +46,15 @@ const Available_courses = ({ delete_course, Enroll_course }) => {
                                     <td className="border p-2">{course.id}</td>
                                     <td className="border p-2">{course.Course_name}</td>
                                     <td className="border p-2">{course.Course_credit}</td>
+                                    <td className="border p-2">{course.teacher_Name}</td>
                                     <td className="border p-2">{course.Course_department}</td>
                                     <td className="border p-2">{course.Course_duration}</td>
                                     <td className="border p-2">{course.Course_desc}</td>
-                                    {
-                                        role === "admin" ? <td className="border p-2 space-x-2">
+                                    {role === "admin" ? (
+                                        <td className="border p-2 space-x-4 flex justify-center">
                                             <button
                                                 onClick={() => {
-                                                    setEditingCourse(course);
-                                                    setFormData({
-                                                        course_name: course.Course_name,
-                                                        credits: course.Course_credit,
-                                                        department: course.Course_department,
-                                                        duration: course.Course_duration,
-                                                        description: course.Course_desc,
-                                                    });
+                                                    startEditing(course)
                                                 }}
                                                 className="bg-yellow-500 hover:bg-yellow-700 text-white px-3 py-1 rounded"
                                             >
@@ -66,24 +66,27 @@ const Available_courses = ({ delete_course, Enroll_course }) => {
                                             >
                                                 Delete
                                             </button>
-                                        </td> :
-                                            <td>
-                                                <button onClick={() => Enroll_course(course.id)} className="bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded">
-                                                    Enroll
-                                                </button>
-                                            </td>
-                                    }
-
+                                        </td>
+                                    ) : (
+                                        <td>
+                                            <button
+                                                onClick={() => Enroll_course(course.id)}
+                                                className="bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded"
+                                            >
+                                                Enroll
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                ) : (
-                    <p className="text-gray-500">No courses created yet.</p>
-                )}
-            </div>
+                </div>
+            ) : !loading && courses.length < 1 ? (
+                <p className="text-gray-500">No courses created yet.</p>
+            ) : ""}
         </div>
-    )
-}
+    );
+};
 
-export default Available_courses
+export default Available_courses;

@@ -57,7 +57,7 @@ class CourseCreate(BaseModel):
     Course_duration : str
     Course_department : str
     Course_credit : str
-    teacher_id: int
+    teacher_Name: str
 
 
 # class model for sending response of course info
@@ -68,7 +68,7 @@ class COursePublic(BaseModel):
     Course_duration : str
     Course_department : str
     Course_credit : str
-    teacher_id: int
+    teacher_Name:str
     created_at: datetime
     updated_at: datetime
 class UpdateCourse(BaseModel):
@@ -85,7 +85,7 @@ class CourseResponse(BaseModel):
     Course_credit: Optional[str]
     Course_duration: Optional[str]
     Course_department: Optional[str]
-    teacher_id: Optional[int]
+    teacher_Name: Optional[str]
 # create assendance rules
 class AttendanceCreate(BaseModel):
     student_id: int
@@ -97,6 +97,7 @@ class AttendanceResponse(BaseModel):
     student_id: int
     course_id: int
     status: str
+    course_name :str
     date: datetime
 
 class BulkAttendanceCreate(BaseModel):
@@ -126,6 +127,7 @@ class EnrollmentResponse(BaseModel):
     id: int
     student_id: int
     course_id: int
+    course_name: str
     
 # create attendance rules
 class AssignmentCreate(BaseModel):
@@ -138,11 +140,20 @@ class AssignmentResponse(BaseModel):
     student_id: int
     course_id: int
     title: str
-    file_url: str
+    file_url: Optional[str] = None
+    comments: Optional[str] = None
     status: str
     grade: Optional[float]
-    version: int
+    version: int = 1
     submitted_at: datetime
+
+class AssignmentUpdate(BaseModel):
+    student_id: Optional[int] = None
+    course_id: Optional[int] = None
+    title: Optional[str] = None
+    status: Optional[str] = None
+    grade: Optional[float] = None
+    comments: Optional[str] = None
 
     class Config:
         from_attributes  = True

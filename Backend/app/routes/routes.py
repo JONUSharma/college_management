@@ -130,15 +130,15 @@ async def get_all_users(
     current_user: models.User = Depends(auth.get_current_user),
     db: AsyncSession = Depends(database.get_db)
 ):
-    logger.info(f"Admin = {current_user.username} requested  all user")
-    if current_user.role != "admin":
-        logger.warning(f"Unauthorized access attempt by = {current_user.username}")
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    result = await db.execute(select(models.User))
-    users = result.scalars().all()
-    logger.info(f"Admin = {current_user.username        } get all user list")
-    return users
+    try:
+        logger.info(f"{current_user.username} requested  all user")
+        result = await db.execute(select(models.User))
+        users = result.scalars().all()
+        logger.info(f"Admin = {current_user.username        } get all user list")
+        return users
+    except Exception as e:
+        logger.exception("Failed to all users")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 #Fetch current user
@@ -320,20 +320,32 @@ async def mark_attendance(
     
 ):
     try:
-        if current_user["role"] not in ["teacher", "admin"]:
+        if current_user.role not in ["Teacher", "admin"]:
             raise HTTPException(status_code=403, detail="Not authorized")
         
         attendance = models.Attendance(
             student_id=attendance_data.student_id,
             course_id=attendance_data.course_id,
             status=attendance_data.status,
+            course_name=attendance_data.course_name,
             date=datetime.utcnow()
         )
         db.add(attendance)
         await db.commit()
         await db.refresh(attendance)
         logger.info(f"Marked attendance for student_id={attendance_data.student_id}")
-        return attendance
+        result = await db.execute(
+            select(models.Course.Course_name).where(models.Course.id == attendance.course_id)
+        )
+        course_name = result.scalar_one()
+        return  schemas.AttendanceResponse(
+            id=attendance.id,
+            student_id=attendance.student_id,
+            course_id=attendance.course_id,
+            course_name=course_name,
+            status=attendance.status,
+            date=attendance.date
+        )
     except Exception as e:
         logger.error(f"Error marking attendance: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -342,15 +354,43 @@ async def mark_attendance(
 async def get_attendance(student_id: int, db: AsyncSession = Depends(database.get_db)):
     try:
         result = await db.execute(
-            select(models.Attendance).where(models.Attendance.student_id == student_id)
+            select(
+                models.Attendance.id,
+                models.Attendance.student_id,
+                models.Attendance.course_id,
+                models.Attendance.status,
+                models.Attendance.date,
+                models.Courses.Course_name.label("course_name")
+            ).join(models.Courses, models.Attendance.course_id == models.Courses.id)
+             .where(models.Attendance.student_id == student_id)
         )
-        data = result.scalars().all()
-        return data
+        rows = result.all()
+        return [
+            schemas.AttendanceResponse(
+                id=row.id,
+                student_id=row.student_id,
+                course_id=row.course_id,
+                course_name=row.course_name,
+                status=row.status,
+                date=row.date,
+            )
+            for row in rows
+        ]
     except Exception as e:
         logger.error(f"Error fetching attendance for student_id={student_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-
+# get all students attendance
+@app.get("/attendance", response_model=list[schemas.AttendanceResponse])
+async def get_all_attendance(db: AsyncSession = Depends(database.get_db)):
+    try:
+        result = await db.execute(select(models.Attendance))
+        data = result.scalars().all()
+        return data
+    except Exception as e:
+        logger.error(f"Error fetching all attendance: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
 @app.post("/attendance/bulk")
 async def mark_bulk_attendance(
     data: schemas.BulkAttendanceCreate,
@@ -359,7 +399,7 @@ async def mark_bulk_attendance(
 
 ):
     try:
-        if current_user["role"] not in ["teacher", "admin"]:
+        if current_user.role not in ["Teacher", "admin"]:
             raise HTTPException(status_code=403, detail="Not authorized")
         
         inserted_attendances = []
@@ -411,6 +451,27 @@ async def enroll_course(enroll: schemas.EnrollmentCreate, db: AsyncSession = Dep
     await db.refresh(enrollment)
     return enrollment
 
+
+# student view their enrolled courses
+@app.get("/{student_id}/enroll-course", response_model=list[schemas.EnrollmentResponse])
+async def get_enrollments(student_id: int, db: AsyncSession = Depends(database.get_db)):
+    result = await db.execute(select(models.Enrollment.id,
+                                     models.Enrollment.student_id,
+                                     models.Enrollment.course_id,
+                                     models.Courses.Course_name)
+                              .join(models.Courses, models.Enrollment.course_id == models.Courses.id)
+                              .where(models.Enrollment.student_id == student_id))
+    rows = result.all()
+    return [
+        schemas.EnrollmentResponse(
+            id= row.id,
+            student_id=row.student_id,
+            course_id=row.course_id,
+            course_name=row.Course_name
+        )
+        for row in rows
+    ]
+
 # Get students of a course (Teacher/Admin/HOD)
 @app.get("/course/{course_id}/students")
 async def get_course_students(course_id: int, db: AsyncSession = Depends(database.get_db), current_user:models.User = Depends(auth.get_current_user)):
@@ -426,3 +487,100 @@ async def get_course_students(course_id: int, db: AsyncSession = Depends(databas
     
     students_list = [{"id": e.student.id, "name": e.student.username} for e in enrollments]
     return students_list   
+
+
+# Create Assignment
+@app.post("/create-assignment", response_model=schemas.AssignmentResponse)
+async def create_assignment(request: schemas.AssignmentCreate, db: AsyncSession = Depends(database.get_db)):
+    try:
+        logger.info("Current user try to submit their assignment")
+        new_assignment = models.Assignment(
+            student_id=request.student_id,
+            course_id=request.course_id,
+            title=request.title,
+            file_url="",  
+            status="Submitted",
+            submitted_at=datetime.utcnow()
+         )
+        db.add(new_assignment)
+        await db.commit()
+        await db.refresh(new_assignment)
+        logger.info("Assignment submit succesfully.")
+        return new_assignment
+    except Exception as e:
+        logger.exception("Error in submitting assignment")
+        raise HTTPException(status_code=404, detail="Internal server error")
+
+
+# Get All Assignments
+@app.get("/assignment/all", response_model=List[schemas.AssignmentResponse])
+async def get_assignments(db: AsyncSession = Depends(database.get_db)):
+    try:
+        logger.info("Current user is try to get all assignment")
+        result = await db.execute(select(models.Assignment))
+        result = result.scalars().all()
+        logger.info("All assignment get successfully.")
+        return result
+    except Exception as e:
+        logger.exception("Error in getting all assignments")
+        raise HTTPException(status_code=500, detail= "Internal server error")
+
+
+
+# Get Assignment by ID
+@app.get("/assignment/{id}", response_model=schemas.AssignmentResponse)
+async def get_assignment(id: int, db: AsyncSession = Depends(database.get_db)):
+    try:
+        logger.info("Current user to get assignment by id by using /assigment/id route")
+        assignment =await db.execute(select(models.Assignment).filter(models.Assignment.id == id))
+        assignment = assignment.scalars().first()
+        if not assignment:
+            logger.warning("Did not get any assignment")
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        logger.info(f"Assignment get successfully! {assignment}")
+        return assignment
+    except Exception as e:
+        logger.exception("Error in getting assignment by id")
+        raise HTTPException(status_code=500, detail= "Internal server error for getting assgnment")
+
+
+# Update Assignment (status, grade, comments, version)
+@app.put("/assignment/{id}", response_model=schemas.AssignmentResponse)
+async def update_assignment(id: int, request: schemas.AssignmentUpdate, db: AsyncSession = Depends(database.get_db)):
+    try:
+        logger.info("Current user want to update the assignment")
+        assignment =await db.execute(select(models.Assignment).filter(models.Assignment.id == id))
+        assignment = assignment.scalars().first()
+        if not assignment:
+          logger.warning("Assignment not found to update")
+          raise HTTPException(status_code=404, detail="Assignment not found")
+
+        assignment.status = request.status
+        assignment.grade = request.grade
+        assignment.comments = request.comments
+        assignment.version = assignment.version + 1
+
+        await db.commit()
+        await db.refresh(assignment)
+        logger.info("User update assignment successfully.")
+        return assignment
+    except Exception as e:
+        logger.exception("Fail in updating assignment")
+        raise HTTPException(status_code=500, detail="Internal server error in updating assignment")
+
+
+# Delete Assignment
+@app.delete("/assignment/{id}")
+async def delete_assignment(id: int, db: AsyncSession = Depends(database.get_db)):
+    try:
+        logger.info("Current user try to delete the assignment by accessing delete assignment")
+        assignment =await db.execute(select(models.Assignment).filter(models.Assignment.id == id))
+        assignment = assignment.scalars().first()
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        await db.delete(assignment)
+        await db.commit()
+        return {"message": "Assignment deleted successfully", "assignment" : assignment}
+    except Exception as e:
+        logger.exception("Failed to delete the assignment")
+        raise HTTPException(status_code=500, detail="Internal server error for deleting a assignment")
