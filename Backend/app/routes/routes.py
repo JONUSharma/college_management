@@ -134,7 +134,7 @@ async def get_all_users(
         logger.info(f"{current_user.username} requested  all user")
         result = await db.execute(select(models.User))
         users = result.scalars().all()
-        logger.info(f"Admin = {current_user.username        } get all user list")
+        logger.info(f"Admin = {current_user.username} get all user list")
         return users
     except Exception as e:
         logger.exception("Failed to all users")
@@ -327,7 +327,6 @@ async def mark_attendance(
             student_id=attendance_data.student_id,
             course_id=attendance_data.course_id,
             status=attendance_data.status,
-            course_name=attendance_data.course_name,
             date=datetime.utcnow()
         )
         db.add(attendance)
@@ -335,7 +334,7 @@ async def mark_attendance(
         await db.refresh(attendance)
         logger.info(f"Marked attendance for student_id={attendance_data.student_id}")
         result = await db.execute(
-            select(models.Course.Course_name).where(models.Course.id == attendance.course_id)
+            select(models.Courses.Course_name).where(models.Courses.id == attendance.course_id)
         )
         course_name = result.scalar_one()
         return  schemas.AttendanceResponse(
@@ -391,45 +390,59 @@ async def get_all_attendance(db: AsyncSession = Depends(database.get_db)):
         logger.error(f"Error fetching all attendance: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
     
+
 @app.post("/attendance/bulk")
 async def mark_bulk_attendance(
     data: schemas.BulkAttendanceCreate,
     db: AsyncSession = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
-
 ):
     try:
+        # Only Teacher or Admin can mark attendance
         if current_user.role not in ["Teacher", "admin"]:
             raise HTTPException(status_code=403, detail="Not authorized")
-        
+
         inserted_attendances = []
 
         for item in data.attendances:
-            # Check student exists
+            # Check if student exists
             student = await db.get(models.User, item.student_id)
             if not student:
                 raise HTTPException(status_code=404, detail=f"Student {item.student_id} not found")
-            
-            # Check course exists
-            course = await db.get(models.Courses, item.course_id)
+
+            # Fetch course with name
+            result = await db.execute(
+                select(models.Courses).where(models.Courses.id == item.course_id)
+            )
+            course = result.scalar_one_or_none()
             if not course:
                 raise HTTPException(status_code=404, detail=f"Course {item.course_id} not found")
 
+            # Create attendance record
             attendance = models.Attendance(
                 student_id=item.student_id,
                 course_id=item.course_id,
                 status=item.status,
                 date=datetime.utcnow()
             )
+
             db.add(attendance)
-            inserted_attendances.append(attendance)
+            inserted_attendances.append({
+                "student_id": item.student_id,
+                "course_id": item.course_id,
+                "course_name": course.Course_name,  # fetched from Courses table
+                "status": item.status,
+                "date": attendance.date
+            })
 
         await db.commit()
-        for att in inserted_attendances:
-            await db.refresh(att)
 
         logger.info(f"Marked bulk attendance for {len(inserted_attendances)} students")
-        return {"message": f"Attendance marked for {len(inserted_attendances)} students", "data": inserted_attendances}
+
+        return {
+            "message": f"Attendance marked for {len(inserted_attendances)} students",
+            "data": inserted_attendances
+        }
 
     except HTTPException:
         raise
@@ -445,11 +458,24 @@ async def enroll_course(enroll: schemas.EnrollmentCreate, db: AsyncSession = Dep
         logger.warning("User not authorized to enroll for course")
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    existing = await db.execute(select(models.Enrollment).where(models.Enrollment.student_id == current_user.id).where(models.Enrollment.course_id == enroll.course_id))
+    if existing.scalars().first():
+        logger.warning("User already enrolled for course")
+        raise HTTPException(status_code=400, detail="User already enrolled for course")
+
     enrollment = models.Enrollment(student_id=enroll.student_id, course_id=enroll.course_id)
     db.add(enrollment)
     await db.commit()
     await db.refresh(enrollment)
-    return enrollment
+    course = await db.execute(select(models.Courses).where(models.Courses.id == enroll.course_id))
+    course_obj = course.scalars().first()
+
+    return {
+        "id": enrollment.id,
+        "student_id": enrollment.student_id,
+        "course_id": enrollment.course_id,
+        "course_name": course_obj.course_name if course_obj else None
+    }
 
 
 # student view their enrolled courses

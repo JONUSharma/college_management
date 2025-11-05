@@ -14,7 +14,7 @@ export const create_course_Thunk = createAsyncThunk("/course/create",
                     "Content-Type": "application/json"
                 }
             });
-            return res.data
+                return res.data
         } catch (error) {
             return rejectWithValue(error.response?.data || "Failed to create course")
         }
@@ -57,12 +57,14 @@ export const Update_course_thunk = createAsyncThunk("/course/update",
 export const delete_course_Thunk = createAsyncThunk("/course/delete",
     async (id, {rejectWithValue})=> {
         try {
+            console.log(id)
             const token = localStorage.getItem("token")
             const res = await instance.delete(`/delete-course/${id}`, {
                 headers : {
                     Authorization : `Bearer ${token}`
                 }
             })
+            console.log(res.data)
             return res.data?.id
         } catch (error) {
             return rejectWithValue(error.response?.data || "Failed to delete the course") 

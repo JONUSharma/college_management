@@ -43,14 +43,16 @@ class Courses(Base):
     teacher_Name = Column(String(40), ForeignKey("users.username"))
 
     teacher = relationship("User", back_populates="courses")
-    enrollments = relationship("Enrollment", back_populates="course")
-
+    enrollments = relationship("Enrollment", back_populates="course",cascade="all, delete-orphan",passive_deletes=True)
+    attendances = relationship("Attendance", cascade="all, delete-orphan", passive_deletes=True)
+    grades = relationship("Grade", cascade="all, delete-orphan", passive_deletes=True)
+    assignments = relationship("Assignment", cascade="all, delete-orphan", passive_deletes=True)
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("users.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    student_id = Column(Integer, ForeignKey("users.id",ondelete="CASCADE"))
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"))
 
     student = relationship("User", back_populates="enrollments")
     course = relationship("Courses", back_populates="enrollments")
@@ -58,24 +60,24 @@ class Enrollment(Base):
 class Attendance(Base):
     __tablename__ = "attendances"
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("users.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    student_id = Column(Integer, ForeignKey("users.id",ondelete="CASCADE"))
+    course_id = Column(Integer, ForeignKey("courses.id",ondelete="CASCADE"))
     date = Column(DateTime, default=datetime.utcnow)
     status = Column(Enum("Present", "Absent", name="attendance_status"))
 
 class Grade(Base):
     __tablename__ = "grades"
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("users.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    student_id = Column(Integer, ForeignKey("users.id",ondelete="CASCADE"))
+    course_id = Column(Integer, ForeignKey("courses.id",ondelete="CASCADE"))
     assignment_grade = Column(Float, nullable=True)
     exam_grade = Column(Float, nullable=True)
 
 class Assignment(Base):
     __tablename__ = "assignments"
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("users.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    student_id = Column(Integer, ForeignKey("users.id",ondelete="CASCADE"))
+    course_id = Column(Integer, ForeignKey("courses.id",ondelete="CASCADE"))
     title = Column(String(100))
     file_url = Column(String(200))
     status = Column(Enum("Submitted", "Reviewed", "Evaluated", "Approved", "Rejected", name="assignment_status"))

@@ -72,11 +72,7 @@ const AllUsers = () => {
                                         <td className="p-2">{val.email}</td>
                                         <td className="p-2">
                                             {val.role === "admin" ?
-                                                <button onClick={() => handleDelete(val.id)}
-                                                    className="bg-gray-500  text-white px-3 py-1 rounded"
-                                                    disabled={true} >
-                                                    Not active
-                                                </button> :
+                                                "" :
                                                 <button onClick={() => { setEditingUser(val.id) }}
                                                     className="bg-yellow-500 text-white px-5 py-1 rounded-lg hover:bg-yellow-600"
                                                 >
@@ -85,13 +81,7 @@ const AllUsers = () => {
                                         <td className="p-3">
                                             {
                                                 val.role === "admin" ?
-                                                    <button
-                                                        onClick={() => handleDelete(val.id)}
-                                                        className="bg-gray-500  text-white px-3 py-1 rounded"
-                                                        disabled={true}
-                                                    >
-                                                        Not active
-                                                    </button> : <button
+                                                   "" : <button
                                                         onClick={() => handleDelete(val.id)}
                                                         className="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded"
                                                     >

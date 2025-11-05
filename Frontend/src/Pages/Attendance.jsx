@@ -27,6 +27,8 @@ const Attendance = () => {
   const { courses } = useSelector((state) => state.CourseSlice);
   const { users } = useSelector((state) => state.auth);
 
+  // console.log(attendance)
+
   // ✅ On mount → check login + fetch current user
   useEffect(() => {
     if (!token) {
@@ -100,7 +102,7 @@ const Attendance = () => {
                       <th className="p-2">Date</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-gray-200  divide-y ">
+                  <tbody className="bg-white divide-gray-200  divide-y   ">
                     {attendance.map((rec) => (
                       <tr key={rec.id}>
                         <td className="p-2 pl-10">{rec.course_id}</td>

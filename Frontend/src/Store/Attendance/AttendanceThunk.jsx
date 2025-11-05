@@ -8,11 +8,11 @@ export const Fetch_Attendance_Thunk = createAsyncThunk("attendance/fetch",
     async ({ role, studentId }, { rejectWithValue }) => {
         try {
             if (role === "student") {
-                const res = await instance.get(`attendance/${studentId}`)
+                const res = await instance.get(`/attendance/${studentId}`)
                 return res.data;
             }
             else {
-                const res = await instance.get("attendance");
+                const res = await instance.get("/attendance");
                 return res.data
             }
         } catch (error) {

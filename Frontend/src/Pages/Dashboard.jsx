@@ -41,6 +41,7 @@ export default function Dashboard() {
       setUserName(Username || "Student");
     } else {
       setUserAuth(false);
+      navigate("/auth")
     }
   }, []);
 
